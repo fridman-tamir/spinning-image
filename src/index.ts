@@ -1,17 +1,18 @@
 //main entry file
 
-import { log } from "console"
+
 import "../public/style.css"
 import {
     Xpell as _x,
     _xlog, //Xpell logger,
     XUI, //Xpell UI module,
+    XUIObject, //Xpell UI object,
     XData as _xd, //Xpell real-time data cache module,
     _xem, //Xpell event manager,
 } from "xpell"
 
 async function main() {
-    _x.verbose() // enable verbose mode (xlog)
+    _x.verbose = true // enable verbose mode (xlog)
     _x.info() // show xpell engine info
     _x.start() // start xpell engine (frame loop)
     _x.loadModule(XUI)
@@ -40,66 +41,128 @@ async function main() {
     // The xhtml element is used to create custom elements using HTML code, add the _html_tag attribute to define the tag name
     // Use XUI.loadObject or XUI.loadControl to create and mount an element to the DOM
 
-    
+
 
     //create main view 
 
+
+
+
+    /**
+     * XField
+     * A simple input field element
+     * @param {Object} data - the data object
+     * @param {String} data._label - the label of the field
+     * @param {String} data._placeholder - the placeholder of the field
+     * @param {String} data._value - the value of the field
+     */
+   class XField extends XUIObject {
+
+        static _xtype = "field"
+
+
+        _label = "Field"
+        _placeholder: any
+        _value: any
+
+
+        constructor(data) {
+            const defaults = {
+                _type: XField._xtype,
+                class: "xfield",
+                _html_tag: "div",
+            }
+            super(data,defaults,true)
+            this.parse(data)
+
+            this.append({
+                _type: "label",
+                _text: this._label,
+                _id: this._id + "-label",
+                class: "xfield-label"
+            })
+
+            this.append({
+                _type: "input",
+                _id: this._id + "-input",
+                class: "xfield-input",
+                placeholder: this._placeholder,
+                value: this._value
+            })
+
+            this.addNanoCommand("reset",(xcmd,xobj) => {
+                XUI._o[this._id + "-input"]._text = ""
+            })
+
+        }
+   }
+
+
+   XUI.importObject(XField._xtype,XField)
+  
   
     const mainView = {
         _type: "view",
         _id: "main-view",
         _parent_element: "root",
         class: "main-view",
-        _start_time: Date.now(),
-        _on_frame: (xobj,frameNum) => {
-            const time = Date.now() - xobj._start_time
-            if(time > 2000) {
-                //change background color hsl * frameNum
-                xobj.dom.style.backgroundColor = "hsl(" + frameNum + ", 100%, 50%)"
-            }
-        },
         _children: [
             {
-                _type: "view",
-                _text: "Xpell UI '_on_frame' Hack",
-                class: "title",
-                _start_time: Date.now(),
-                _on_frame: (xobj,frameNum) => { 
-                    const time = Date.now() - xobj._start_time
-                    //if time >1 second, hide the view
-                    const logo = XUI.getObject("logo")
-                    if(time > 1000 && !xobj._hidden) {
-                        xobj.hide()
-                        logo.show()
-                    }
-                    if (time > 2000) {
-                        logo._allow_spin = true
-                    }
+                _type: "field",
+                _label: "Name",
+                _id: "name-field",
+                _placeholder: "Enter your name",
+                _value: "John Doe"
+            },
+            {
+                _type: "field",
+                _label: "Email",
+                _id: "email-field",
+                _placeholder: "Enter your email", 
+                _value: "mymail@text.com"
+            },
+            {
+                _type:"text",
+                _id:"mcmd",
+                value:"reset"
+            },
+            {
+                _type: "button",
+                _text: "Reset",
+                _on_click: (xobj) => {
+                    const cmd = XUI._o["mcmd"].dom.value
+                    console.log(cmd);
+                    
+                    XUI._o["name-field"].run("this " + cmd)
+                    XUI._o["email-field"].run("this " + cmd)
                 }
             },
             {
-                _type: "image",
-                _id: "logo",
-                src: "/public/images/logo.webp",
-                class: "logo-image",
-                _allow_spin: false,
-                _on_mount: (xobj) => {
-                    xobj.hide()
-                },
-                _on_frame: (xobj,frameNum) => { 
-                    //spin the logo
-                    if(xobj._allow_spin) {
-                        xobj.dom.style.transform = `rotate(${frameNum}deg )`
-                    }
+                _type:"textarea",
+                _id:"add-object",
+                _text:JSON.stringify({
+                    _type: "field",
+                    _label: "New Field",
+                    _placeholder: "Enter new field",
+                    _value: "New Value"
+                })
+            },
+            {
+                _type: "button",
+                _text: "Add Field",
+                _on_click: (xobj) => {
+                    const data = JSON.parse(XUI._o["add-object"].dom.value)
+                    XUI.add(data)
                 }
             }
+            
         ]
     }
 
-    XUI.loadObject(mainView)
-    
+    XUI.add(mainView)
 
     
+
 }
 
 

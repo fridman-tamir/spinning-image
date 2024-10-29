@@ -111,5 +111,5 @@ public/videos/
 code-examples.txt
 ignore
 models_ignore
-tsconfig.json
+package-lock.json
 **/.DS_Store
